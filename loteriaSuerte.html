@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Lottery</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-sha256/0.9.0/sha256.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        /* --- CSS Styles --- */
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: #ecf0f1;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        header {
+            width: 100%;
+            z-index: 100;
+            margin-top: 20px;
+        }
+
+        .main-nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px 20px;
+            flex-direction: row;
+        }
+
+        .nav-container {
+            display: flex;
+            gap: 20px;
+            flex-direction: row;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #fff;
+            padding: 8px 15px;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 600px) {
+            .main-nav {
+                padding: 10px;
+            }
+
+            .nav-container {
+                gap: 10px;
+            }
+
+            .nav-link {
+                padding: 8px 10px;
+            }
+        }
+
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        p {
+            margin-bottom: 20px;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+
+        input[type="number"] {
+            width: 70px;
+            height: 70px;
+            font-size: 2em;
+            text-align: center;
+            border: 3px solid #ccc;
+            border-radius: 50%;
+            background: #ffffff;
+            color: #2E8BC0;
+            font-weight: bold;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+            outline: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+
+        input:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        input::placeholder {
+            color: rgba(20, 22, 71, 0.1);
+            font-weight: bold;
+        }
+
+
+        .number-circle {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: #f39c12;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2em;
+            color: #333;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+
+        .circle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+        }
+
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10;
+            padding: 10px;
+        }
+
+        .header-actions-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 10px;
+            font-size: 0.9em;
+            background: #f39c12;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            gap: 5px;
+            height: 32px;
+        }
+
+        .header-actions-item:hover {
+            background: #e67e22;
+        }
+
+        .network-dropdown {
+            position: relative;
+            display: inline-block;
+            color: #fff;
+        }
+
+        .network-dropdown[data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 1;
+        }
+
+        .network-dropdown:hover[data-tooltip]::after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .network-dropdown label {
+            margin-bottom: 5px;
+        }
+
+        .network-dropdown select {
+            padding: 4px;
+            font-size: 0.9em;
+            border-radius: 5px;
+            border: none;
+            background: #f39c12;
+            color: #333;
+            cursor: pointer;
+            transition: background 0.3s;
+            height: 100%;
+        }
+
+        .network-dropdown select:hover {
+            background: #e67e22;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 0.8em;
+            background-color: #f39c12;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #e67e22;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+
+        @keyframes slide-in {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slide-out {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+        }
+
+        .network-message {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background-color: #27ae60;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1em;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            display: none;
+            animation: slide-in 0.5s forwards;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .history {
+            margin-top: 30px;
+            text-align: left;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            max-height: 200px;
+            overflow-y: auto;
+            position: relative;
+            font-size: 0.9em;
+            line-height: 1.5em;
+        }
+
+        .history-container {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .history h3 {
+            margin-bottom: 10px;
+        }
+
+        .clear-history {
+            position: absolute;
+            top: 0px;
+            right: 5px;
+            font-size: 0.7em;
+            padding: 3px 6px;
+            background: #e74c3c;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .clear-history:hover {
+            background: #c0392b;
+        }
+
+        .loading-spinner {
+            width: 18px;
+            height: 18px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding-right: 5px;
+        }
+
+        .history-item::-webkit-scrollbar {
+            height: 5px;
+        }
+
+        .history-item::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .history-item::-webkit-scrollbar-thumb {
+            background: #f39c12;
+            border-radius: 10px;
+        }
+
+        .history-item span {
+            margin-right: 5px;
+        }
+
+        .history-item a {
+            color: #fff;
+            text-decoration: none;
+            margin-right: 5px;
+            white-space: nowrap;
+        }
+
+        .history-item a:hover {
+            text-decoration: underline;
+        }
+
+        .copy-text-button {
+            background: none;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8em;
+            padding: 0;
+            white-space: nowrap;
+        }
+
+        .phone-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .phone-input-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .phone-input-container input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-top: 3px;
+            box-sizing: border-box;
+            color: #333;
+            width: 100%;
+            font-size: 0.8em;
+            max-width: 200px;
+        }
+
+        .phone-input-container input:focus {
+            outline: none;
+            border-color: #f39c12;
+            box-shadow: 0 0 5px rgba(243, 156, 18, 0.5);
+        }
+
+        .phone-input-container label {
+            text-align: left;
+            font-size: 0.9em;
+            margin-bottom: 3px;
+        }
+
+        #confirm-phone-container {
+            display: none;
+        }
+
+        .phone-verification-message {
+            margin-top: 10px;
+            font-size: 0.8em;
+            color: #27ae60;
+            display: none;
+        }
+
+        .show-password-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            padding: 5px;
+            margin-left: 5px;
+            align-self: center;
+        }
+
+        .show-password-button:focus {
+            outline: none;
+        }
+
+        /* --- Ticket Styles --- */
+        .ticket {
+            width: 200px;
+            border: 1px dashed #000;
+            padding: 10px;
+            text-align: center;
+            word-wrap: break-word;
+            background-color: #fff;
+            color: #000;
+            display: none;
+        }
+
+        .header-ticket {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .price {
+            font-size: 16px;
+            margin: 5px 0;
+        }
+
+        .details-ticket {
+            font-size: 12px;
+            text-align: left;
+            margin: 10px 0;
+        }
+        .ticket-label {
+            font-size: 12px;
+            font-weight: bold; /* Para poner el texto en negritas */
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .ticket-value {
+            font-size: 8px;
+            display: inline-block;
+            word-break: break-all; /* Evita que se salga del div contenedor */
+            max-width: 150px; /* Establece un ancho máximo */
+        }
+
+
+        .lottery-number-ticket {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .hash-ticket {
+            font-size: 9px;
+            word-break: break-word;
+        }
+
+        .link-ticket {
+            font-size: 9px;
+            margin: 10px 0;
+            word-break: break-word;
+        }
+
+        .datetime-ticket {
+            font-size: 8px;
+            margin: 5px 0;
+        }
+
+        .qr-code {
+            margin: 10px auto;
+        }
+
+        .footer-ticket {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #ticket-container,
+            #ticket-container * {
+                visibility: visible;
+            }
+
+            html,
+            body {
+                width: 58mm;
+                margin: 0;
+                padding: 0;
+            }
+
+            .ticket {
+                width: 58mm;
+                border: 1px dashed #000;
+                padding: 10px;
+                text-align: center;
+                word-wrap: break-word;
+                box-sizing: border-box;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- --- HTML Structure --- -->
+    <div class="container">
+        <div class="header-actions">
+            <div class="header-actions-item" id="connect-wallet">
+                <span id="wallet-icon" class="wallet-icon"></span>
+                <span id="wallet-address">Connect Wallet</span>
+            </div>
+            <div class="header-actions-item network-dropdown" data-tooltip="" id="network-dropdown">
+                <label for="network-select"> </label>
+                <select id="network-select">
+                    <option value="base">Base mainnet</option>
+                    <option value="polygon">Polygon mainnet</option>
+                    <option value="celo">Celo mainnet</option>
+                    <option value="bnb">BNB mainnet</option>
+                    <option value="sepolia">Ethereum Sepolia Testnet</option>
+                    <option value="base-sepolia">Base Sepolia</option>
+                </select>
+            </div>
+        </div>
+
+        <h1>Number Lottery</h1>
+        <p>Select 4 numbers from 0 to 9:</p>
+        <div class="number-circle">
+            <label><input type="number" min="0" max="9" placeholder="0-9"></label>
+            <label><input type="number" min="0" max="9" placeholder="0-9"></label>
+            <label><input type="number" min="0" max="9" placeholder="0-9"></label>
+            <label><input type="number" min="0" max="9" placeholder="0-9"></label>
+        </div>
+        <div class="phone-container">
+            <div class="phone-input-container">
+                <label for="phone-number">Phone Number:</label>
+                <input type="tel" id="phone-number" placeholder="Enter your phone number">
+            </div>
+            <div class="phone-input-container" id="confirm-phone-container">
+                <label for="confirm-phone-number">Confirm Phone:</label>
+                <input type="password" id="confirm-phone-number" placeholder="Confirm your phone number">
+            </div>
+        </div>
+        <div id="phone-verification-message" class="phone-verification-message">Phone numbers matched!</div>
+
+
+        <div class="button-container">
+            <button id="random-button">Random</button>
+            <button id="buy-button">Buy Ticket</button>
+        </div>
+
+        <div id="error-message" class="error-message"></div>
+        <div class="history" id="history">
+            <h3>History</h3>
+            <button class="clear-history" id="clear-history">Clear History</button>
+            <div class="history-container" id="history-container">
+                <p id="no-tickets-message">No tickets purchased yet.</p>
+            </div>
+        </div>
+    </div>
+    <div id="ticket-container" class="ticket">
+        <div class="header-ticket">LOTERIA SUERTE</div>
+        <div class="price">Precio: 25 pesos</div>
+        <div class="datetime-ticket">
+            Hora de impresión: <span id="time"></span><br>
+            Fecha: <span id="date"></span><br>
+            Pronostica los últimos 4 dígitos del primer premio de la Lotería Nacional 'Sorteo Superior Viernes'.<br>
+            Resultados: viernes <span id="results-date"></span>, 10 PM <br>
+            Este boleto es válido únicamente para el sorteo correspondiente a la fecha indicada.<br>
+        </div>
+        <div class="details-ticket" id="ticket-details"></div>
+        <div id="qr-container" class="qr-code"></div>
+        <div class="footer-ticket">Echame la Suerte</div>
+    </div>
+    <header>
+        <nav class="main-nav">
+            <div class="nav-container">
+                <a href="index.html" class="nav-link">Lotería</a>
+                <a href="how-to-play.html" class="nav-link">Cómo Jugar</a>
+                <a href="prizes.html" class="nav-link">Premios</a>
+                <a href="claim.html" class="nav-link">Reclamo</a>
+            </div>
+        </nav>
+
+    </header>
+    <div id="network-message" class="network-message">Network switched successfully!</div>
+    <script>
+        //  --- JavaScript Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Elements
+            const connectWalletButton = document.getElementById('connect-wallet');
+            const walletAddressSpan = document.getElementById('wallet-address');
+            const networkSelect = document.getElementById('network-select');
+            const networkMessage = document.getElementById('network-message');
+            const randomButton = document.getElementById('random-button');
+            const buyButton = document.getElementById('buy-button');
+            const numberInputs = document.querySelectorAll('.number-circle input[type="number"]');
+            const historyDiv = document.getElementById('history');
+            const historyContainer = document.getElementById('history-container');
+            const noTicketsMessage = document.getElementById('no-tickets-message');
+            const clearHistoryButton = document.getElementById('clear-history');
+            const errorMessageDiv = document.getElementById('error-message');
+            const phoneNumberInput = document.getElementById('phone-number');
+            const confirmPhoneContainer = document.getElementById('confirm-phone-container');
+            const confirmPhoneNumberInput = document.getElementById('confirm-phone-number');
+            const phoneVerificationMessage = document.getElementById('phone-verification-message');
+
+            // Variables
+            let currentAccount = null;
+            let ticketHistory = [];
+            const defaultNetworkName = "base";
+            let provider = null;
+            let signer = null;
+            let isSwitchingNetwork = false;
+            const phoneSalt = "MCA"
+
+            // Function to show error messages
+            function showError(message) {
+                errorMessageDiv.textContent = message;
+                errorMessageDiv.style.display = 'block';
+                setTimeout(() => {
+                    errorMessageDiv.style.display = 'none';
+                }, 5000);
+            }
+
+            function encryptPhoneNumber(phoneNumber) {
+                if (!phoneNumber) return '';
+                return sha256(phoneNumber + phoneSalt);
+            }
+
+            // Function to update the wallet address display
+            function updateWalletDisplay() {
+                if (currentAccount) {
+                    const shortAddress = currentAccount.slice(0, 6) + '...' + currentAccount.slice(-4);
+                    walletAddressSpan.textContent = shortAddress;
+                } else {
+                    walletAddressSpan.textContent = 'Connect Wallet';
+                }
+            }
+
+            // Function to handle wallet connection
+            async function connectWallet() {
+                if (window.ethereum) {
+                    try {
+                        provider = new ethers.providers.Web3Provider(window.ethereum);
+                        await provider.send("eth_requestAccounts", []);
+                        signer = provider.getSigner();
+                        const accounts = await provider.listAccounts();
+                        currentAccount = accounts[0];
+                        updateWalletDisplay();
+                    } catch (error) {
+                        console.error("Error connecting to wallet", error);
+                        showError("Error connecting to wallet.")
+                    }
+                } else {
+                    console.error("No Ethereum wallet detected");
+                    showError("No Ethereum wallet detected");
+                }
+            }
+
+            // Function to handle network change
+            async function switchNetwork() {
+                if (isSwitchingNetwork) return;
+                isSwitchingNetwork = true;
+                const selectedNetwork = networkSelect.value;
+                let chainId;
+                let networkName;
+                let rpcUrl;
+
+                switch (selectedNetwork) {
+                    case "base":
+                        chainId = "0x2105";
+                        networkName = "Base Mainnet";
+                        rpcUrl = `https://rpc.ankr.com/base`;
+                        break;
+                    case "polygon":
+                        chainId = "0x89";
+                        networkName = "Polygon Mainnet";
+                        rpcUrl = `https://rpc.ankr.com/polygon`;
+                        break;
+                    case "celo":
+                        chainId = "0xA4EC";
+                        networkName = "Celo Mainnet";
+                        rpcUrl = `https://rpc.ankr.com/celo`;
+                        break;
+                    case "bnb":
+                        chainId = "0x38";
+                        networkName = "BNB Mainnet";
+                        rpcUrl = `https://rpc.ankr.com/bnb`;
+                        break;
+                    case "sepolia":
+                        chainId = "0xaa36a7";
+                        networkName = "Ethereum Sepolia Testnet";
+                        rpcUrl = `https://eth-sepolia.g.alchemy.com/v2/WddzdzI2o9S3COdT73d5w6AIogbKq4X-`;
+                        break;
+                    case "base-sepolia":
+                        chainId = "0x14a34";
+                        networkName = "Base Sepolia";
+                        rpcUrl = `https://sepolia.base.org`;
+                        break;
+                    default:
+                        console.error("Invalid network selected");
+                        showError("Invalid network selected");
+                        isSwitchingNetwork = false;
+                        return;
+                }
+                try {
+                    await window.ethereum.request({
+                        method: "wallet_switchEthereumChain",
+                        params: [{
+                            chainId: chainId
+                        }],
+                    });
+                    networkMessage.textContent = `Switched to ${networkName}!`;
+                    networkMessage.style.display = 'block';
+                    setTimeout(() => {
+                        networkMessage.style.display = 'none';
+                    }, 3000);
+                    // Update provider and signer after network change
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    signer = provider.getSigner();
+                } catch (switchError) {
+                    // This error code indicates that the chain has not been added to MetaMask.
+                    if (switchError.code === 4902) {
+                        try {
+                            await window.ethereum.request({
+                                method: 'wallet_addEthereumChain',
+                                params: [{
+                                    chainId: chainId,
+                                    chainName: networkName,
+                                    nativeCurrency: {
+                                        name: 'Ether',
+                                        symbol: 'ETH',
+                                        decimals: 18,
+                                    },
+                                    rpcUrls: [rpcUrl],
+                                }, ],
+                            });
+                        } catch (addError) {
+                            console.error("Error adding network", addError);
+                            showError("Error adding network")
+                        }
+                    } else {
+                        console.error("Error switching network", switchError);
+                        showError("Error switching network")
+                    }
+                } finally {
+                    isSwitchingNetwork = false;
+                }
+            }
+
+            // Function to generate random numbers
+            function generateRandomNumbers() {
+                for (let i = 0; i < numberInputs.length; i++) {
+                    numberInputs[i].value = Math.floor(Math.random() * 10);
+                }
+            }
+
+            // Function to format the numbers
+            function formatNumbers() {
+                let formattedNumbers = '';
+                numberInputs.forEach(input=> {
+                    formattedNumbers += String(input.value).padStart(1, '0');
+                });
+                return formattedNumbers;
+            }
+
+             // Function to update the history display
+            async function updateHistoryDisplay() {
+                historyDiv.innerHTML = '<h3>History</h3><button class="clear-history" id="clear-history">Clear History</button><div class="history-container" id="history-container"></div>';
+
+                const historyContainer = document.getElementById('history-container');
+                historyContainer.innerHTML = '';
+
+                if (ticketHistory.length === 0) {
+                    noTicketsMessage.style.display = 'block';
+                } else {
+                    noTicketsMessage.style.display = 'none';
+                    ticketHistory.forEach((ticket, index) => {
+                        const historyItem = document.createElement('div');
+                        historyItem.classList.add('history-item');
+
+                        const formattedNumbers = ticket.numbers;
+
+                        const numbersSpan = document.createElement('span');
+                        numbersSpan.textContent = formattedNumbers;
+                        historyItem.appendChild(numbersSpan);
+
+                        const phoneSpan = document.createElement('span');
+                        phoneSpan.textContent = `SEC: ${ticket.encryptedPhoneNumber}`;
+                        historyItem.appendChild(phoneSpan);
+
+                        const etherscanLink = document.createElement('a');
+                        etherscanLink.href = `https://basescan.org/tx/${ticket.transactionHash}`;
+                        etherscanLink.textContent = 'View on Explorer';
+                        etherscanLink.target = '_blank';
+                        historyItem.appendChild(etherscanLink);
+
+
+                        const copyButton = document.createElement('button');
+                        copyButton.classList.add('copy-text-button');
+                        copyButton.textContent = "Copy";
+
+                        copyButton.addEventListener('click', () => {
+                            const textToCopy = `Numbers: ${formattedNumbers}\nPhone: ${ticket.encryptedPhoneNumber}\nExplorer: ${etherscanLink.href}`
+                            navigator.clipboard.writeText(textToCopy)
+                                .then(() => {
+                                    copyButton.textContent = "Copied!";
+                                    setTimeout(() => {
+                                        copyButton.textContent = 'Copy'
+                                    }, 2000);
+                                })
+                                .catch((err) => {
+                                    console.error("Error copying text", err);
+                                    showError("Error copying text")
+                                })
+                        })
+                        historyItem.appendChild(copyButton);
+
+                        const printButton = document.createElement('button');
+                        printButton.textContent = 'Print';
+                        printButton.classList.add('copy-text-button')
+                        printButton.addEventListener('click', () => {
+                            printTicket(ticket);
+                        })
+                        historyItem.appendChild(printButton);
+
+                        const downloadButton = document.createElement('button');
+                        downloadButton.textContent = 'Download';
+                        downloadButton.classList.add('copy-text-button')
+                        downloadButton.addEventListener('click', () => {
+                            downloadTicket(ticket);
+                        })
+                        historyItem.appendChild(downloadButton);
+
+
+                        historyContainer.appendChild(historyItem);
+                    });
+                }
+                // Add click event to the clear history button
+                document.getElementById('clear-history').addEventListener('click', clearHistory);
+            }
+            // Function to handle ticket purchase
+            async function buyTicket() {
+                if (!currentAccount) {
+                    showError("Please connect your wallet first");
+                    return;
+                }
+                const phoneNumber = phoneNumberInput.value;
+                const confirmPhoneNumber = confirmPhoneNumberInput.value;
+
+                if (!phoneNumber || !confirmPhoneNumber) {
+                    showError("Please enter your phone number and confirm it.");
+                    return;
+                }
+
+                if (phoneNumber !== confirmPhoneNumber) {
+                    showError("Phone numbers do not match.");
+                    return;
+                }
+
+                try {
+                    const numbers = formatNumbers();
+                    const encryptedPhoneNumber = encryptPhoneNumber(phoneNumber);
+                    const messageData = `0x#${numbers}-${encryptedPhoneNumber}`;
+                    const transaction = {
+                        to: currentAccount,
+                        value: ethers.utils.parseEther("0.00001"),
+                        data: ethers.utils.toUtf8Bytes(messageData) //Agrega el mensaje a la transaccion
+                    };
+                    const txResponse = await signer.sendTransaction(transaction);
+                    await txResponse.wait();
+
+                    if (txResponse.hash) {
+                        const newTicket = {
+                            numbers: numbers,
+                            transactionHash: txResponse.hash,
+                            encryptedPhoneNumber: encryptedPhoneNumber
+                        };
+                        ticketHistory.push(newTicket);
+                        updateHistoryDisplay();
+                    } else {
+                        showError("Transaction failed, Please try again.")
+                    }
+                } catch (error) {
+                    console.error("Error buying ticket", error);
+                    showError("Transaction failed, Please try again.")
+                }
+            }
+            // Function to clear the history
+            function clearHistory() {
+                ticketHistory = [];
+                updateHistoryDisplay();
+            }
+            // Set the default network
+            networkSelect.value = defaultNetworkName;
+
+            // Function to update the ticket preview
+           function updateTicketPreview(ticket) {
+                const ticketDetails = document.getElementById('ticket-details');
+                const qrContainer = document.getElementById('qr-container');
+                const ticketContainer = document.getElementById('ticket-container');
+
+                // Set data for the ticket
+                const formattedNumbers = ticket.numbers;
+                const explorerLink = `https://basescan.org/tx/${ticket.transactionHash}`;
+
+                 let formattedDetails = '';
+                formattedDetails += `<div class='lottery-number-ticket'>#${formattedNumbers}</div>`;
+                formattedDetails += `<div class='hash-ticket'><span class="ticket-label">SEC:</span> <span class="ticket-value">${ticket.encryptedPhoneNumber}</span></div>`;
+                formattedDetails += `<div class='link-ticket'><span class="ticket-label">Registro Inmutable:</span> <span class="ticket-value">${explorerLink}</span></div>`;
+
+                ticketDetails.innerHTML = formattedDetails;
+
+                // Generar Código QR
+                qrContainer.innerHTML = '';
+                const qrCode = document.createElement('img');
+                qrCode.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(explorerLink)}`;
+                qrCode.alt = 'QR Code';
+                qrCode.style.width = '100px';
+                qrCode.style.height = '100px';
+                qrContainer.appendChild(qrCode);
+
+                // Añadir la fecha y hora actual
+                const now = new Date();
+                const time = now.toLocaleTimeString();
+                const date = now.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', ''); // Remove dot from short month
+                
+                document.getElementById('time').textContent = time;
+                document.getElementById('date').textContent = date;
+                
+                // Calcular el siguiente viernes
+                const daysUntilFriday = (5 - now.getDay() + 7) % 7 || 7;
+                const nextFriday = new Date(now.getTime() + daysUntilFriday * 24 * 60 * 60 * 1000);
+                const resultsDate = nextFriday.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', ''); // Remove dot from short month
+                
+                document.getElementById('results-date').textContent = resultsDate;
+
+
+                ticketContainer.style.display = 'block';
+            }
+
+            function printTicket(ticket) {
+                updateTicketPreview(ticket); // Update the preview with ticket data
+                window.print();
+            }
+
+            function downloadTicket(ticket) {
+                updateTicketPreview(ticket); // Generate the ticket first
+                const ticketContainer = document.getElementById('ticket-container');
+                html2canvas(ticketContainer, {
+                    scale: 3,
+                    useCORS: true
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = imgData;
+                    link.download = 'ticket.png';
+                    link.click();
+                }).catch(err => {
+                    console.error('Error al capturar el ticket:', err);
+                });
+            }
+
+            // Event Listeners
+            connectWalletButton.addEventListener('click', connectWallet);
+            networkSelect.addEventListener('change', switchNetwork);
+            randomButton.addEventListener('click', generateRandomNumbers);
+            buyButton.addEventListener('click', buyTicket);
+
+            phoneNumberInput.addEventListener('input', () => {
+                confirmPhoneContainer.style.display = phoneNumberInput.value ? 'flex' : 'none';
+
+                if (phoneNumberInput.value && confirmPhoneNumberInput.value && phoneNumberInput.value === confirmPhoneNumberInput.value) {
+                    phoneVerificationMessage.style.display = 'block';
+                    setTimeout(() => {
+                        phoneVerificationMessage.style.display = 'none';
+                    }, 3000);
+                } else {
+                    phoneVerificationMessage.style.display = 'none';
+                }
+            });
+
+            confirmPhoneNumberInput.addEventListener('input', () => {
+                if (phoneNumberInput.value && confirmPhoneNumberInput.value && phoneNumberInput.value === confirmPhoneNumberInput.value) {
+                    phoneVerificationMessage.style.display = 'block';
+                    setTimeout(() => {
+                        phoneVerificationMessage.style.display = 'none';
+                    }, 3000);
+                } else {
+                    phoneVerificationMessage.style.display = 'none';
+                }
+            });
+
+            // Input validation
+            numberInputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    const value = input.value;
+                    // Remove any character that isn't a digit
+                    input.value = value.replace(/\D/g, '');
+
+                    // Ensure only 1 digit
+                    if (input.value.length > 1) {
+                        input.value = input.value.slice(0, 1);
+                    }
+                    // Ensure value is between 0 and 9
+                    if (input.value < 0 || input.value > 9) {
+                        input.value = '';
+                    }
+                });
+            });
+
+            // Limitar el campo de teléfono a 10 dígitos
+            phoneNumberInput.addEventListener('input', () => {
+                if (phoneNumberInput.value.length > 10) {
+                    phoneNumberInput.value = phoneNumberInput.value.slice(0, 10);
+                }
+            });
+
+            confirmPhoneNumberInput.addEventListener('input', () => {
+                if (confirmPhoneNumberInput.value.length > 10) {
+                    confirmPhoneNumberInput.value = confirmPhoneNumberInput.value.slice(0, 10);
+                }
+            });
+            // Agregar un icono de "mostrar contraseña" al campo de confirmación
+            if (confirmPhoneContainer) {
+                const showPasswordButton = document.createElement('button');
+                showPasswordButton.textContent = '👁️'; // Icono de ojo
+                showPasswordButton.classList.add('show-password-button');
+                confirmPhoneContainer.appendChild(showPasswordButton);
+
+                showPasswordButton.addEventListener('mousedown', () => {
+                    confirmPhoneNumberInput.type = 'tel';
+                });
+                showPasswordButton.addEventListener('mouseup', () => {
+                    confirmPhoneNumberInput.type = 'password';
+                });
+                showPasswordButton.addEventListener('mouseleave', () => {
+                    confirmPhoneNumberInput.type = 'password';
+                });
+            }
+
+
+            // Initial setup
+            updateWalletDisplay();
+            updateHistoryDisplay();
+            // Check for the default network on page load
+            switchNetwork();
+            // Hide confirm phone number on initial load
+            confirmPhoneContainer.style.display = 'none';
+            // Add listener for network change event from MetaMask
+            if (window.ethereum) {
+                window.ethereum.on('chainChanged', async (chainId) => {
+                    // Handle the network change
+                    console.log("Network changed to ", chainId)
+                    await switchNetwork();
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
