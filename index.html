@@ -514,9 +514,11 @@
             text-align: left;
             margin: 10px 0;
         }
+
         .ticket-label {
             font-size: 12px;
-            font-weight: bold; /* Para poner el texto en negritas */
+            font-weight: bold;
+            /* Para poner el texto en negritas */
             display: inline-block;
             margin-right: 5px;
         }
@@ -524,8 +526,10 @@
         .ticket-value {
             font-size: 8px;
             display: inline-block;
-            word-break: break-all; /* Evita que se salga del div contenedor */
-            max-width: 150px; /* Establece un ancho máximo */
+            word-break: break-all;
+            /* Evita que se salga del div contenedor */
+            max-width: 150px;
+            /* Establece un ancho máximo */
         }
 
 
@@ -577,16 +581,44 @@
                 width: 58mm;
                 margin: 0;
                 padding: 0;
+                font-size: 10px;
             }
 
             .ticket {
                 width: 58mm;
-                border: 1px dashed #000;
-                padding: 10px;
+                border: none;
+                padding: 5px;
                 text-align: center;
                 word-wrap: break-word;
                 box-sizing: border-box;
+                background-color: #fff;
+                color: #000;
             }
+
+            .header-ticket {
+                font-size: 14px;
+                font-weight: bold;
+            }
+
+            .price {
+                font-size: 12px;
+            }
+        }
+
+        #ticket-print-button {
+            padding: 8px 16px;
+            font-size: 1em;
+            background-color: #4CAF50;
+            /* Verde */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        #ticket-print-button:hover {
+            background-color: #367C39;
         }
     </style>
 </head>
@@ -602,12 +634,8 @@
             <div class="header-actions-item network-dropdown" data-tooltip="" id="network-dropdown">
                 <label for="network-select"> </label>
                 <select id="network-select">
-                    <option value="base">Base mainnet</option>
-                    <option value="polygon">Polygon mainnet</option>
-                    <option value="celo">Celo mainnet</option>
-                    <option value="bnb">BNB mainnet</option>
-                    <option value="sepolia">Ethereum Sepolia Testnet</option>
-                    <option value="base-sepolia">Base Sepolia</option>
+                     <!-- Marca opBNB como seleccionada -->
+                    <option value="opbnb" selected>opBNB Mainnet</option>
                 </select>
             </div>
         </div>
@@ -651,15 +679,15 @@
         <div class="header-ticket">LOTERIA SUERTE</div>
         <div class="price">Precio: 25 pesos</div>
         <div class="datetime-ticket">
-            Hora de impresión: <span id="time"></span><br>
-            Fecha: <span id="date"></span><br>
             Pronostica los últimos 4 dígitos del primer premio de la Lotería Nacional 'Sorteo Superior Viernes'.<br>
             Resultados: viernes <span id="results-date"></span>, 10 PM <br>
             Este boleto es válido únicamente para el sorteo correspondiente a la fecha indicada.<br>
+            Hora de impresión: <span id="time"></span><br>
+            Fecha: <span id="date"></span><br>
         </div>
         <div class="details-ticket" id="ticket-details"></div>
         <div id="qr-container" class="qr-code"></div>
-        <div class="footer-ticket">Echame la Suerte</div>
+        <div class="footer-ticket">Suerte</div>
     </div>
     <header>
         <nav class="main-nav">
@@ -697,7 +725,7 @@
             // Variables
             let currentAccount = null;
             let ticketHistory = [];
-            const defaultNetworkName = "base";
+            const defaultNetworkName = "opbnb"; // Establece opBNB como red por defecto
             let provider = null;
             let signer = null;
             let isSwitchingNetwork = false;
@@ -729,7 +757,7 @@
 
             // Function to handle wallet connection
             async function connectWallet() {
-                if (window.ethereum) {
+                if (typeof window.ethereum !== 'undefined') {
                     try {
                         provider = new ethers.providers.Web3Provider(window.ethereum);
                         await provider.send("eth_requestAccounts", []);
@@ -739,12 +767,24 @@
                         updateWalletDisplay();
                     } catch (error) {
                         console.error("Error connecting to wallet", error);
-                        showError("Error connecting to wallet.")
+                        showError("Error connecting to wallet: " + error.message);
                     }
                 } else {
                     console.error("No Ethereum wallet detected");
-                    showError("No Ethereum wallet detected");
+                    showError("No Ethereum wallet detected. Please install MetaMask or a compatible wallet.");
                 }
+            }
+
+            // Add this event listener
+            if (window.ethereum) {
+                window.ethereum.on('accountsChanged', async (accounts) => {
+                    if (accounts.length > 0) {
+                        currentAccount = accounts[0];
+                    } else {
+                        currentAccount = null; // Disconnected
+                    }
+                    updateWalletDisplay();
+                });
             }
 
             // Function to handle network change
@@ -755,37 +795,18 @@
                 let chainId;
                 let networkName;
                 let rpcUrl;
+                let nativeCurrency; // Agregamos la información de la moneda nativa
 
                 switch (selectedNetwork) {
-                    case "base":
-                        chainId = "0x2105";
-                        networkName = "Base Mainnet";
-                        rpcUrl = `https://rpc.ankr.com/base`;
-                        break;
-                    case "polygon":
-                        chainId = "0x89";
-                        networkName = "Polygon Mainnet";
-                        rpcUrl = `https://rpc.ankr.com/polygon`;
-                        break;
-                    case "celo":
-                        chainId = "0xA4EC";
-                        networkName = "Celo Mainnet";
-                        rpcUrl = `https://rpc.ankr.com/celo`;
-                        break;
-                    case "bnb":
-                        chainId = "0x38";
-                        networkName = "BNB Mainnet";
-                        rpcUrl = `https://rpc.ankr.com/bnb`;
-                        break;
-                    case "sepolia":
-                        chainId = "0xaa36a7";
-                        networkName = "Ethereum Sepolia Testnet";
-                        rpcUrl = `https://eth-sepolia.g.alchemy.com/v2/WddzdzI2o9S3COdT73d5w6AIogbKq4X-`;
-                        break;
-                    case "base-sepolia":
-                        chainId = "0x14a34";
-                        networkName = "Base Sepolia";
-                        rpcUrl = `https://sepolia.base.org`;
+                    case "opbnb":
+                        chainId = "0xcc";
+                        networkName = "opBNB Mainnet";
+                        rpcUrl = `https://opbnb-mainnet-rpc.bnbchain.org`;
+                        nativeCurrency = {
+                            name: 'BNB',
+                            symbol: 'BNB',
+                            decimals: 18,
+                        };
                         break;
                     default:
                         console.error("Invalid network selected");
@@ -817,12 +838,13 @@
                                 params: [{
                                     chainId: chainId,
                                     chainName: networkName,
-                                    nativeCurrency: {
+                                    nativeCurrency: nativeCurrency || { // Usamos los valores por defecto
                                         name: 'Ether',
                                         symbol: 'ETH',
                                         decimals: 18,
                                     },
                                     rpcUrls: [rpcUrl],
+                                    blockExplorerUrls: [`https://opbnbscan.com/`] // Agregar el explorador de bloques
                                 }, ],
                             });
                         } catch (addError) {
@@ -840,23 +862,26 @@
 
             // Function to generate random numbers
             function generateRandomNumbers() {
-                for (let i = 0; i < numberInputs.length; i++) {
-                    numberInputs[i].value = Math.floor(Math.random() * 10);
+                if (numberInputs) {
+                    numberInputs.forEach(input => {
+                        input.value = Math.floor(Math.random() * 10);
+                    });
                 }
             }
 
             // Function to format the numbers
             function formatNumbers() {
                 let formattedNumbers = '';
-                numberInputs.forEach(input=> {
+                numberInputs.forEach(input => {
                     formattedNumbers += String(input.value).padStart(1, '0');
                 });
                 return formattedNumbers;
             }
 
-             // Function to update the history display
+            // Function to update the history display
             async function updateHistoryDisplay() {
-                historyDiv.innerHTML = '<h3>History</h3><button class="clear-history" id="clear-history">Clear History</button><div class="history-container" id="history-container"></div>';
+                historyDiv.innerHTML =
+                    '<h3>History</h3><button class="clear-history" id="clear-history">Clear History</button><div class="history-container" id="history-container"></div>';
 
                 const historyContainer = document.getElementById('history-container');
                 historyContainer.innerHTML = '';
@@ -880,7 +905,7 @@
                         historyItem.appendChild(phoneSpan);
 
                         const etherscanLink = document.createElement('a');
-                        etherscanLink.href = `https://basescan.org/tx/${ticket.transactionHash}`;
+                        etherscanLink.href = `https://opbnbscan.com/tx/${ticket.transactionHash}`;
                         etherscanLink.textContent = 'View on Explorer';
                         etherscanLink.target = '_blank';
                         historyItem.appendChild(etherscanLink);
@@ -891,7 +916,8 @@
                         copyButton.textContent = "Copy";
 
                         copyButton.addEventListener('click', () => {
-                            const textToCopy = `Numbers: ${formattedNumbers}\nPhone: ${ticket.encryptedPhoneNumber}\nExplorer: ${etherscanLink.href}`
+                            const textToCopy =
+                                `Numbers: ${formattedNumbers}\nPhone: ${ticket.encryptedPhoneNumber}\nExplorer: ${etherscanLink.href}`
                             navigator.clipboard.writeText(textToCopy)
                                 .then(() => {
                                     copyButton.textContent = "Copied!";
@@ -922,13 +948,14 @@
                         })
                         historyItem.appendChild(downloadButton);
 
-
                         historyContainer.appendChild(historyItem);
                     });
                 }
+
                 // Add click event to the clear history button
                 document.getElementById('clear-history').addEventListener('click', clearHistory);
             }
+
             // Function to handle ticket purchase
             async function buyTicket() {
                 if (!currentAccount) {
@@ -952,16 +979,20 @@
                     const numbers = formatNumbers();
                     const encryptedPhoneNumber = encryptPhoneNumber(phoneNumber);
                     const messageData = `0x#${numbers}-${encryptedPhoneNumber}`;
+
+                    const ticketPriceInEth = "0.00001"; // Precio del ticket en ETH
+                    const lotteryWalletAddress = "0x6bde98c54cefa42673c61f8b8e9561d1e016b489"; // Dirección de la billetera de la lotería
+
                     const transaction = {
-                        to: currentAccount,
-                        value: ethers.utils.parseEther("0.00001"),
-                        data: ethers.utils.toUtf8Bytes(messageData) //Agrega el mensaje a la transaccion
+                        to: lotteryWalletAddress, // La dirección de destino es la billetera de la lotería
+                        value: ethers.utils.parseEther(ticketPriceInEth),
+                        data: ethers.utils.toUtf8Bytes(messageData)
                     };
+
                     const txResponse = await signer.sendTransaction(transaction);
                     await txResponse.wait();
 
-                    if (txResponse.hash) {
-                        const newTicket = {
+                    if (txResponse.hash) {const newTicket = {
                             numbers: numbers,
                             transactionHash: txResponse.hash,
                             encryptedPhoneNumber: encryptedPhoneNumber
@@ -976,25 +1007,32 @@
                     showError("Transaction failed, Please try again.")
                 }
             }
+
             // Function to clear the history
             function clearHistory() {
                 ticketHistory = [];
                 updateHistoryDisplay();
             }
+
             // Set the default network
             networkSelect.value = defaultNetworkName;
 
             // Function to update the ticket preview
-           function updateTicketPreview(ticket) {
+            function updateTicketPreview(ticket) {
                 const ticketDetails = document.getElementById('ticket-details');
                 const qrContainer = document.getElementById('qr-container');
                 const ticketContainer = document.getElementById('ticket-container');
 
                 // Set data for the ticket
                 const formattedNumbers = ticket.numbers;
-                const explorerLink = `https://basescan.org/tx/${ticket.transactionHash}`;
+                let explorerLink = '';
+                if (ticket.transactionHash) {
+                    explorerLink = `https://opbnbscan.com/tx/${ticket.transactionHash}`;
+                } else {
+                    explorerLink = "N/A"
+                }
 
-                 let formattedDetails = '';
+                let formattedDetails = '';
                 formattedDetails += `<div class='lottery-number-ticket'>#${formattedNumbers}</div>`;
                 formattedDetails += `<div class='hash-ticket'><span class="ticket-label">SEC:</span> <span class="ticket-value">${ticket.encryptedPhoneNumber}</span></div>`;
                 formattedDetails += `<div class='link-ticket'><span class="ticket-label">Registro Inmutable:</span> <span class="ticket-value">${explorerLink}</span></div>`;
@@ -1004,7 +1042,8 @@
                 // Generar Código QR
                 qrContainer.innerHTML = '';
                 const qrCode = document.createElement('img');
-                qrCode.src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(explorerLink)}`;
+                qrCode.src =
+                    `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(explorerLink)}`;
                 qrCode.alt = 'QR Code';
                 qrCode.style.width = '100px';
                 qrCode.style.height = '100px';
@@ -1013,41 +1052,78 @@
                 // Añadir la fecha y hora actual
                 const now = new Date();
                 const time = now.toLocaleTimeString();
-                const date = now.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', ''); // Remove dot from short month
-                
+                const date = now.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                }).replace('.', ''); // Remove dot from short month
+
                 document.getElementById('time').textContent = time;
                 document.getElementById('date').textContent = date;
-                
+
                 // Calcular el siguiente viernes
                 const daysUntilFriday = (5 - now.getDay() + 7) % 7 || 7;
                 const nextFriday = new Date(now.getTime() + daysUntilFriday * 24 * 60 * 60 * 1000);
-                const resultsDate = nextFriday.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).replace('.', ''); // Remove dot from short month
-                
+                const resultsDate = nextFriday.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                }).replace('.', ''); // Remove dot from short month
+
                 document.getElementById('results-date').textContent = resultsDate;
 
 
-                ticketContainer.style.display = 'block';
+                ticketContainer.style.display = 'block'; // Asegura que el ticket sea visible
+
+                // Agregar el botón de imprimir (si no existe ya)
+                let printButton = document.getElementById('ticket-print-button');
+                if (!printButton) {
+                    printButton = document.createElement('button');
+                    printButton.id = 'ticket-print-button';
+                    printButton.textContent = 'Imprimir Ticket';
+                    printButton.addEventListener('click', () => {
+                        window.print(); // Llama a la impresión solo cuando se hace clic en el botón
+                    });
+                    ticketContainer.appendChild(printButton);
+                }
             }
 
             function printTicket(ticket) {
-                updateTicketPreview(ticket); // Update the preview with ticket data
-                window.print();
+                updateTicketPreview(ticket); // Actualiza la vista previa del ticket
+                // window.print();  <-- Comentar o eliminar esta línea
             }
 
             function downloadTicket(ticket) {
                 updateTicketPreview(ticket); // Generate the ticket first
                 const ticketContainer = document.getElementById('ticket-container');
+                const printButton = document.getElementById('ticket-print-button'); // Get reference to the print button
+
+                // Remove the print button temporarily
+                if (printButton) {
+                    printButton.style.display = 'none'; // Hide the print button
+                }
+
                 html2canvas(ticketContainer, {
                     scale: 3,
                     useCORS: true
                 }).then(canvas => {
+                    // Restore the print button after capturing the image
+                    if (printButton) {
+                        printButton.style.display = 'block'; // Restore the print button
+                    }
+
                     const imgData = canvas.toDataURL('image/png');
                     const link = document.createElement('a');
                     link.href = imgData;
                     link.download = 'ticket.png';
                     link.click();
                 }).catch(err => {
+                    // Restore the print button even if there's an error
+                    if (printButton) {
+                        printButton.style.display = 'block'; // Restore the print button
+                    }
                     console.error('Error al capturar el ticket:', err);
+                    showError('Error al capturar el ticket: ' + err.message);
                 });
             }
 
@@ -1060,7 +1136,8 @@
             phoneNumberInput.addEventListener('input', () => {
                 confirmPhoneContainer.style.display = phoneNumberInput.value ? 'flex' : 'none';
 
-                if (phoneNumberInput.value && confirmPhoneNumberInput.value && phoneNumberInput.value === confirmPhoneNumberInput.value) {
+                if (phoneNumberInput.value && confirmPhoneNumberInput.value && phoneNumberInput.value ===
+                    confirmPhoneNumberInput.value) {
                     phoneVerificationMessage.style.display = 'block';
                     setTimeout(() => {
                         phoneVerificationMessage.style.display = 'none';
@@ -1071,7 +1148,8 @@
             });
 
             confirmPhoneNumberInput.addEventListener('input', () => {
-                if (phoneNumberInput.value && confirmPhoneNumberInput.value && phoneNumberInput.value === confirmPhoneNumberInput.value) {
+                if (phoneNumberInput.value && confirmPhoneNumberInput.value && phoneNumberInput.value ===
+                    confirmPhoneNumberInput.value) {
                     phoneVerificationMessage.style.display = 'block';
                     setTimeout(() => {
                         phoneVerificationMessage.style.display = 'none';
@@ -1111,24 +1189,6 @@
                     confirmPhoneNumberInput.value = confirmPhoneNumberInput.value.slice(0, 10);
                 }
             });
-            // Agregar un icono de "mostrar contraseña" al campo de confirmación
-            if (confirmPhoneContainer) {
-                const showPasswordButton = document.createElement('button');
-                showPasswordButton.textContent = '👁️'; // Icono de ojo
-                showPasswordButton.classList.add('show-password-button');
-                confirmPhoneContainer.appendChild(showPasswordButton);
-
-                showPasswordButton.addEventListener('mousedown', () => {
-                    confirmPhoneNumberInput.type = 'tel';
-                });
-                showPasswordButton.addEventListener('mouseup', () => {
-                    confirmPhoneNumberInput.type = 'password';
-                });
-                showPasswordButton.addEventListener('mouseleave', () => {
-                    confirmPhoneNumberInput.type = 'password';
-                });
-            }
-
 
             // Initial setup
             updateWalletDisplay();
@@ -1137,14 +1197,6 @@
             switchNetwork();
             // Hide confirm phone number on initial load
             confirmPhoneContainer.style.display = 'none';
-            // Add listener for network change event from MetaMask
-            if (window.ethereum) {
-                window.ethereum.on('chainChanged', async (chainId) => {
-                    // Handle the network change
-                    console.log("Network changed to ", chainId)
-                    await switchNetwork();
-                });
-            }
         });
     </script>
 </body>
